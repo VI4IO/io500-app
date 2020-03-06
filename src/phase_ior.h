@@ -8,8 +8,10 @@ typedef struct{
   int no_run;
   char * api;
   int odirect;
+  int uniquedir;
 
   int filePerProc;
+  int uniqueDir;
   char * transferSize;
   char * blockSize;
   char * hintsFileName;
@@ -21,6 +23,7 @@ typedef struct{
   int no_run;
   char * api;
   bool odirect;
+  bool uniquedir;
   char * hintsFileName;
 
   int segments;
