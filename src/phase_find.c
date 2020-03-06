@@ -17,6 +17,7 @@ typedef struct{
 
   pfind_options_t * pfind_o;
   pfind_find_results_t * pfind_res;
+  MPI_Comm pfind_com;
   int pfind_queue_length;
   int pfind_steal_from_next;
   int pfind_par_single_dir_access_hash;
@@ -38,9 +39,10 @@ static double run(void){
   if(opt.dry_run){
     return 0;
   }
-  {
+  if(opt.rank == 0){
+    // check the existance of the timestamp file just for correctness
     char timestamp_file[PATH_MAX];
-    sprintf(timestamp_file, "%s/timestampfile", opt.resdir);
+    sprintf(timestamp_file, "%s/timestampfile", opt.datadir);
     FILE * f = fopen(timestamp_file, "r");
     if(! f){
       FATAL("Couldn't open timestampfile: %s\n", timestamp_file);
@@ -49,24 +51,35 @@ static double run(void){
   }
 
   if(! of.ext_find){
+    if(of.pfind_com == MPI_COMM_NULL){
+      return 0;
+    }
+
+    int rank;
+    MPI_Comm_rank(of.pfind_com, & rank);
+
     // pfind supports stonewalling timer -s, but ignore for now
     pfind_find_results_t * res = pfind_find(of.pfind_o);
     of.pfind_res = pfind_aggregrate_results(res);
 
-    if(opt.rank == 0){
+    if(rank == 0){
       char res_file[PATH_MAX];
-      sprintf(res_file, "%s/find.txt", opt.resdir);
+      sprintf(res_file, "%s/find.csv", opt.resdir);
       FILE * fd = fopen(res_file, "w");
       fprintf(fd, "runtime: %f rate: %f\n", of.pfind_res->runtime, of.pfind_res->rate);
-      fprintf(fd, "rank, errors, unknown, found, total, checked\n");
-      fprintf(fd, "0, %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64"\n", res->errors, res->unknown_file, res->found_files, res->total_files, res->checked_dirents);
-      for(int i=1; i < opt.mpi_size; i++){
-        MPI_Recv(& res->errors, 5, MPI_LONG_LONG_INT, i, 4712, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        fprintf(fd, "%d, %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64"\n", i, res->errors, res->unknown_file, res->found_files, res->total_files, res->checked_dirents);
+      fprintf(fd, "rank, errors, unknown, found, total, checked, job steal msgs received, work items send, job steal msgs send, work items stolen, time spend in job stealing in s, number of completion tokens send\n");
+      fprintf(fd, "0, %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64, res->errors, res->unknown_file, res->found_files, res->total_files, res->checked_dirents);
+      fprintf(fd, ", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %.3fs, %"PRIu64"\n", res->monitor.job_steal_inbound, res->monitor.work_send, res->monitor.job_steal_tries, res->monitor.work_stolen, res->monitor.job_steal_mpitime_us / 1000000.0, res->monitor.completion_tokens_send);
+      for(int i=1; i < of.nproc; i++){
+        MPI_Recv(& res->errors, 5, MPI_LONG_LONG_INT, i, 4712, of.pfind_com, MPI_STATUS_IGNORE);
+        fprintf(fd, "%d, %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64, i, res->errors, res->unknown_file, res->found_files, res->total_files, res->checked_dirents);
+        MPI_Recv(& res->monitor, 6, MPI_LONG_LONG_INT, i, 4713, of.pfind_com, MPI_STATUS_IGNORE);
+        fprintf(fd, ", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %.3fs, %"PRIu64"\n", res->monitor.job_steal_inbound, res->monitor.work_send, res->monitor.job_steal_tries, res->monitor.work_stolen, res->monitor.job_steal_mpitime_us / 1000000.0, res->monitor.completion_tokens_send);
       }
       fclose(fd);
     }else{
-      MPI_Send(& res->errors, 5, MPI_LONG_LONG_INT, 0, 4712, MPI_COMM_WORLD);
+      MPI_Send(& res->errors, 5, MPI_LONG_LONG_INT, 0, 4712, of.pfind_com);
+      MPI_Send(& res->monitor, 6, MPI_LONG_LONG_INT, 0, 4713, of.pfind_com);
     }
     free(res);
     of.found_files = of.pfind_res->found_files;
@@ -159,7 +172,7 @@ static void validate(void){
       FATAL("The external-script must be a executable file %s\n", of.ext_find);
     }
     char arguments[1024];
-    sprintf(arguments, "%s -newer %s/timestampfile -size 3901c -name \"*01*\"", opt.datadir, opt.resdir);
+    sprintf(arguments, "%s -newer %s/timestampfile -size 3901c -name \"*01*\"", opt.datadir, opt.datadir);
 
     char command[2048];
     sprintf(command, "%s %s %s %s", of.ext_mpi, of.ext_find, of.ext_args, arguments);
@@ -170,7 +183,7 @@ static void validate(void){
     u_argv_push(argv, "./pfind");
     u_argv_push(argv, opt.datadir);
     u_argv_push(argv, "-newer");
-    u_argv_push_printf(argv, "%s/timestampfile", opt.resdir);
+    u_argv_push_printf(argv, "%s/timestampfile", opt.datadir);
     u_argv_push(argv, "-size");
     u_argv_push(argv, "3901c");
     u_argv_push(argv, "-name");
@@ -194,18 +207,21 @@ static void validate(void){
       int ret = MPI_Comm_split(MPI_COMM_WORLD, color, opt.rank, & com);
       MPI_Comm_size(com, & ret);
       DEBUG_INFO("Configuring pfind to run with %d procs\n", ret);
-      if(color == 1 && of.nproc != ret){
+      if(color && of.nproc != ret){
         FATAL("Couldn't split rank for find into %d procs (got %d procs)\n", of.nproc, ret);
+      }
+      if(color == 0){
+        MPI_Comm_free(& com);
+        com = MPI_COMM_NULL;
       }
     }
 
-    of.pfind_o = pfind_parse_args(argv->size, argv->vector, 0, com);
+    of.pfind_com = com;
+    if(com != MPI_COMM_NULL) {
+      of.pfind_o = pfind_parse_args(argv->size, argv->vector, 0, com);
+    }
 
     u_argv_free(argv);
-
-    if(of.nproc != INI_UNSET_UINT){
-      MPI_Comm_free(& com);
-    }
   }
 }
 
