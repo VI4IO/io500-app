@@ -8,7 +8,6 @@ typedef struct{
   int no_run;
   char * api;
   int odirect;
-  int uniquedir;
 
   int filePerProc;
   int uniqueDir;
