@@ -22,7 +22,6 @@ typedef struct{
   int no_run;
   char * api;
   bool odirect;
-  bool uniquedir;
   char * hintsFileName;
 
   int segments;

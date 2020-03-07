@@ -9,7 +9,7 @@ opt_ior_easy ior_easy_o;
 static ini_option_t option[] = {
   {"API", "The API to be used", 0, INI_STRING, "POSIX", & ior_easy_o.api},
   {"posix.odirect", "Use ODirect", 0, INI_BOOL, NULL, & ior_easy_o.odirect},
-  {"uniqueDir", "Use unique directory name for each file-per-process", 0, INI_BOOL, "FALSE", & ior_easy_o.uniqueDir},
+  {"uniqueDir", "Use unique directory name for each file-per-process", 0, INI_BOOL, NULL, & ior_easy_o.uniqueDir},
   {"transferSize", "Transfer size", 0, INI_STRING, "2m", & ior_easy_o.transferSize},
   {"blockSize", "Block size; must be a multiple of transferSize", 0, INI_STRING, "9920000m", & ior_easy_o.blockSize},
   {"hintsFileName", "Filename for MPI hint file", 0, INI_STRING, NULL, & ior_easy_o.hintsFileName},
@@ -52,6 +52,11 @@ void ior_easy_add_params(u_argv_t * argv){
 
   u_argv_push(argv, "./ior");
   u_argv_push(argv, "-C");
+
+  if(ior_easy_o.uniqueDir){
+    u_argv_push(argv, "-u");
+  }
+
   u_argv_push(argv, "-Q");
   u_argv_push(argv, "1");
   u_argv_push(argv, "-g");
@@ -74,9 +79,6 @@ void ior_easy_add_params(u_argv_t * argv){
     u_argv_push(argv, "-F");
   }
 
-  if(ior_easy_o.uniqueDir){
-    u_argv_push(argv, "-u");
-  }
 }
 
 u_phase_t p_ior_easy = {
