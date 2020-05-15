@@ -269,7 +269,10 @@ int main(int argc, char ** argv){
 
         char score_str[40];
         sprintf(score_str, "%f", score);
-        dupprintf("[RESULT] %20s %15s %s : time %.3f seconds\n", phase->name, score_str, phase->name[0] == 'i' ? "GiB/s " : "kIOPS", runtime);
+        dupprintf("[RESULT%s] %20s %15s %s : time %.3f seconds\n",
+		  phase->type == IO500_PHASE_WRITE && runtime < IO500_MINWRITE ?
+			"-invalid" : "",
+		  phase->name, score_str, phase->name[0] == 'i' ? "GiB/s " : "kIOPS", runtime);
       }
       u_hash_update_key_val_dbl(& score_hash, phase->name, score);
     }
@@ -330,7 +333,7 @@ int main(int argc, char ** argv){
     PRINT_PAIR("hash", "%X\n", (int) score_hash);
 
     dupprintf("[SCORE%s] Bandwidth %f GB/s : IOPS %f kiops : TOTAL %f\n",
-      opt.is_valid_run ? "" : " INVALID",
+      opt.is_valid_run ? "" : "-invalid",
       scores[IO500_SCORE_BW], scores[IO500_SCORE_MD], overall_score);
   }
 
