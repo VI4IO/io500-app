@@ -154,6 +154,8 @@ function setup_ior_easy {
   [ -n "$val" ] && params+=" -U $val"
   val="$(get_ini_param ior-easy posix.odirect)"
   [ "$val" = "True" ] && params+=" --posix.odirect"
+  val="$(get_ini_param ior-easy verbosity)"
+  [ -n "$val" ] && params+=" $(yes ' -v' | head -$val)"
   io500_ior_easy_params="$params"
   echo -n ""
 }
@@ -179,6 +181,8 @@ function setup_ior_hard {
   [ -n "$val" ] && params+=" -U $val"
   val="$(get_ini_param ior-hard posix.odirect)"
   [ "$val" = "True" ] && params+=" --posix.odirect"
+  val="$(get_ini_param ior-easy verbosity)"
+  [ -n "$val" ] && params+="$(yes ' -v' | head -$val)"
   io500_ior_hard_api_specific_options="$params"
   echo -n ""
 }
