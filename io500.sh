@@ -219,6 +219,7 @@ function extra_description {
   # EXAMPLE:
   # io500_info_system_name='xxx'
   # DO NOT ADD IT HERE
+  :
 }
 
 main
