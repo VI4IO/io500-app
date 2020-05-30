@@ -71,7 +71,7 @@ static void init_dirs(void){
     opt.aiori->check_params(& opt.aiori_params);
   }
   if (opt.aiori->initialize){
-    opt.aiori->initialize();
+    opt.aiori->initialize(opt.aiori_params.backend_options);
   }
 
   if(opt.timestamp == NULL){
@@ -417,7 +417,7 @@ int main(int argc, char ** argv){
   fclose(file_out);
 
   if (opt.aiori->finalize){
-    opt.aiori->finalize();
+    opt.aiori->finalize(opt.aiori_params.backend_options);
   }
 out:
   if (mpi_init)
