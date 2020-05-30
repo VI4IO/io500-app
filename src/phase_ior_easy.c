@@ -34,7 +34,7 @@ static void validate(void){
 
 static void cleanup(void){
   if( ! opt.dry_run && opt.rank == 0){
-    u_purge_file("ior-easy/stonewall");
+    //u_purge_file("ior-easy/stonewall");
 
     if(! ior_easy_o.filePerProc){
       u_purge_file("ior-easy/ior_file_easy");
