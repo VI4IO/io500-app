@@ -16,7 +16,7 @@ static double run(void){
   if(opt.rank != 0) return 0;
 
   char timestamp_file[2048];
-  sprintf(timestamp_file, "%s/timestampfile", opt.datadir);
+  sprintf(timestamp_file, "%s/timestampfile", opt.resdir);
   INFO_PAIR("timestamp-file", "%s\n", timestamp_file);
 
   FILE * f = fopen(timestamp_file, "w");

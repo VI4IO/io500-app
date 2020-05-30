@@ -41,7 +41,7 @@ void mdtest_easy_add_params(u_argv_t * argv){
   u_argv_push(argv, "-d");
   u_argv_push_printf(argv, "%s/mdtest-easy", opt.datadir);
   u_argv_push(argv, "-x");
-  u_argv_push_printf(argv, "%s/mdtest-easy-stonewall", opt.datadir);
+  u_argv_push_printf(argv, "%s/mdtest-easy.stonewall", opt.resdir);
 }
 
 u_phase_t p_mdtest_easy = {
