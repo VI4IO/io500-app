@@ -43,11 +43,10 @@ static double run(void){
     // check the existance of the timestamp file just for correctness
     char timestamp_file[PATH_MAX];
     sprintf(timestamp_file, "%s/timestampfile", opt.datadir);
-    FILE * f = fopen(timestamp_file, "r");
-    if(! f){
+    struct stat buff;
+    if(opt.aiori->stat(timestamp_file, & buff, & opt.aiori_params)){
       FATAL("Couldn't open timestampfile: %s\n", timestamp_file);
     }
-    fclose(f);
   }
 
   if(! of.ext_find){

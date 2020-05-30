@@ -18,13 +18,11 @@ static double run(void){
   char timestamp_file[2048];
   sprintf(timestamp_file, "%s/timestampfile", opt.resdir);
   INFO_PAIR("timestamp-file", "%s\n", timestamp_file);
-
-  FILE * f = fopen(timestamp_file, "w");
-  if(! f){
+  void * fd = opt.aiori->create(timestamp_file, & opt.aiori_params);
+  if(fd == NULL){
     FATAL("Couldn't write timestampfile: %s\n", timestamp_file);
   }
-  fclose(f);
-
+  opt.aiori->close(fd, & opt.aiori_params);
   return 0;
 }
 
