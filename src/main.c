@@ -132,6 +132,8 @@ int main(int argc, char ** argv){
   ini_section_t ** cfg = u_options();
 
   if (argc < 2 || strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0){
+    PRINT_PAIR("version", "%s\n", VERSION);
+
     help:
     r0printf("Synopsis: %s <INI file> [-v=<verbosity level>] [--dry-run] [--cleanup] [--config-hash] [--timestamp <timestamp>]\n\n", argv[0]);
     r0printf("--config-hash Compute the configuration hash\n");
@@ -144,7 +146,7 @@ int main(int argc, char ** argv){
     goto out;
   }
   if (argc < 2 || strcmp(argv[1], "-l") == 0 || strcmp(argv[1], "--list") == 0){
-    if (rank == 0){
+    if (opt.rank == 0){
       /* print this as a comment, in case it is saved into the .ini file */
       r0printf("# Supported and current values of the ini file:\n");
       u_ini_print_values(stdout, cfg, TRUE);

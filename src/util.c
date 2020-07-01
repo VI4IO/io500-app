@@ -263,7 +263,7 @@ static void hash_func(bool is_section, char const * key, char const * val){
   if(strcmp(key, "version") == 0){
     printf("result file ver = %s\n", val);
     if(strcmp(val, VERSION) != 0){
-      WARNING("Verify the output with the matching version of the benchmark.\n");
+      WARNING("You should verify the output with the matching version of the benchmark.\n");
     }
     u_hash_update_key_val(& res_data.score_hash, key, val);
     return;
