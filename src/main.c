@@ -67,15 +67,15 @@ static void prepare_aiori(void){
   if(opt.aiori == NULL){
     FATAL("Could not load AIORI backend for %s with options: %s\n", opt.api, opt.apiArgs);
   }
+  if (opt.aiori->xfer_hints){
+    memset(& opt.backend_hints, 0, sizeof(opt.backend_hints));
+    opt.aiori->xfer_hints(& opt.backend_hints);
+  }
   if(opt.aiori->check_params){
     opt.aiori->check_params(opt.backend_opt);
   }
   if (opt.aiori->initialize){
     opt.aiori->initialize(opt.backend_opt);
-  }
-  if (opt.aiori->xfer_hints){
-    memset(& opt.backend_hints, 0, sizeof(opt.backend_hints));
-    opt.aiori->xfer_hints(& opt.backend_hints);
   }
 
   if(opt.timestamp == NULL){
@@ -107,7 +107,7 @@ static void prepare_aiori(void){
 
   if(opt.rank == 0){
     ior_aiori_t const * posix = aiori_select("POSIX");
-    u_create_dir_recursive(opt.resdir, posix);
+    u_create_dir_recursive(opt.resdir, posix, NULL);
     u_create_datadir("");
   }
 }
@@ -421,11 +421,11 @@ int main(int argc, char ** argv){
     fprintf(file_out, "\n");
   }
 
-  fclose(file_out);
-
   if (opt.aiori->finalize){
     opt.aiori->finalize(opt.backend_opt);
   }
+  
+  fclose(file_out);
 out:
   if (mpi_init)
     MPI_Finalize();
