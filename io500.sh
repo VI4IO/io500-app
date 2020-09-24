@@ -2,6 +2,9 @@
 #
 # INSTRUCTIONS:
 # This script takes its parameters from the same .ini file as io500 binary.
+echo "** NOTE: you should use the "IO500/io500" repo for submissions for"
+echo "         the SC20 list.  This repo is for historical comparison only."
+exit 99
 
 function setup_paths {
   # Set the paths to the binaries and how to launch MPI jobs.

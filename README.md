@@ -1,5 +1,7 @@
 # io500
 
+*NOTE: please use the "IO500/io500" repo for SC20 and later list submissions*
+
 This is the C version of the IO500 benchmark.
 
 ## Preparation
